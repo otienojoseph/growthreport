@@ -439,6 +439,228 @@ export default function AuditPage() {
           </div>
         </section>
 
+        {/* Technical Health & Performance - Gated */}
+        {audit.paid && full?.website && (
+          <section>
+            <h2 className="text-base font-semibold text-gray-900 mb-3">
+              Technical Health & Performance
+            </h2>
+
+            {/* Lighthouse Scores */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              {[
+                {
+                  label: "Performance",
+                  score: full.website.lighthouse?.performanceScore ?? 0,
+                },
+                {
+                  label: "Accessibility",
+                  score: full.website.lighthouse?.accessibilityScore ?? 0,
+                },
+                {
+                  label: "Best Practices",
+                  score: full.website.lighthouse?.bestPracticesScore ?? 0,
+                },
+                { label: "SEO", score: full.website.lighthouse?.seoScore ?? 0 },
+              ].map((lh, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-gray-200 bg-white p-4 text-center"
+                >
+                  <div
+                    className={`text-2xl font-bold mb-1 ${lh.score >= 90 ? "text-green-600" : lh.score >= 50 ? "text-orange-500" : "text-red-600"}`}
+                  >
+                    {lh.score}
+                  </div>
+                  <div className="text-xs text-gray-500 uppercase tracking-widest">
+                    {lh.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Core Web Vitals */}
+            {full.website.lighthouse?.coreWebVitals && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5 mb-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                  Core Web Vitals
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.entries(full.website.lighthouse.coreWebVitals).map(
+                    ([k, v]: [string, any]) => (
+                      <div key={k}>
+                        <p className="text-xs text-gray-400 font-medium uppercase mb-1">
+                          {k}
+                        </p>
+                        <div className="flex items-end gap-2">
+                          <span
+                            className={`text-lg font-bold ${v.score >= 0.9 ? "text-green-600" : v.score >= 0.5 ? "text-orange-500" : "text-red-600"}`}
+                          >
+                            {v.value}
+                            {k === "cls" ? "" : k === "si" ? "" : " ms"}
+                          </span>
+                          <span className="text-xs text-gray-500 mb-1 pb-0.5">
+                            {v.label}
+                          </span>
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SEO & Technical Checks */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                Platform Checks
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">SSL Certificate</span>
+                  <span
+                    className={
+                      full.website.hasSSL
+                        ? "text-green-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {full.website.hasSSL ? "Valid" : "Missing / Invalid"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Mobile Responsive</span>
+                  <span
+                    className={
+                      full.website.mobileResponsive
+                        ? "text-green-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {full.website.mobileResponsive ? "Yes" : "No"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Sitemap.xml</span>
+                  <span
+                    className={
+                      full.website.hasSitemap
+                        ? "text-green-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {full.website.hasSitemap ? "Found" : "Missing"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Robots.txt</span>
+                  <span
+                    className={
+                      full.website.hasRobotsTxt
+                        ? "text-green-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {full.website.hasRobotsTxt ? "Found" : "Missing"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Broken Links</span>
+                  <span
+                    className={
+                      full.website.brokenLinks?.length === 0
+                        ? "text-green-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {full.website.brokenLinks?.length || 0} issues
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Missing Alt Text</span>
+                  <span
+                    className={
+                      full.website.missingAltText === 0
+                        ? "text-green-600 font-medium"
+                        : "text-orange-500 font-medium"
+                    }
+                  >
+                    {full.website.missingAltText || 0} images
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Social Performance - Gated */}
+        {audit.paid &&
+          full?.social?.platforms &&
+          full.social.platforms.length > 0 && (
+            <section>
+              <h2 className="text-base font-semibold text-gray-900 mb-3">
+                Social Media Performance
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {full.social.platforms.map((p: any) => (
+                  <div
+                    key={p.platform}
+                    className="rounded-xl border border-gray-200 bg-white p-5"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-gray-900 capitalize">
+                        {p.platform}
+                      </h3>
+                      <span className="text-xs font-semibold text-gray-500">
+                        @{p.handle}
+                      </span>
+                    </div>
+                    {p.found ? (
+                      <div className="grid grid-cols-2 gap-y-4 gap-x-2">
+                        <div>
+                          <p className="text-xs text-gray-400 font-medium uppercase mb-1">
+                            Followers
+                          </p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {(p.followers ?? 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 font-medium uppercase mb-1">
+                            Engagement
+                          </p>
+                          <p className="text-lg font-bold text-blue-600">
+                            {(p.engagementRate ?? 0).toFixed(2)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 font-medium uppercase mb-1">
+                            Avg Likes
+                          </p>
+                          <p className="text-sm font-semibold text-gray-700">
+                            {(p.avgLikes ?? 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 font-medium uppercase mb-1">
+                            Profile Score
+                          </p>
+                          <p className="text-sm font-semibold text-gray-700">
+                            {p.profileScore}/100
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-4 text-center text-sm text-gray-500 bg-gray-50 rounded-lg">
+                        Profile not found or inaccessible
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
         {/* Findings — gated */}
         {audit.paid ? (
           <section>
@@ -446,7 +668,10 @@ export default function AuditPage() {
               Detailed findings
             </h2>
             <div className="space-y-3">
-              {(full?.website?.findings ?? []).map((f: any) => (
+              {[
+                ...(full?.website?.findings ?? []),
+                ...(full?.social?.findings ?? []),
+              ].map((f: any) => (
                 <div
                   key={f.id}
                   className="rounded-xl border border-gray-200 bg-white p-4"
