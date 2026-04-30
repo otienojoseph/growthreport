@@ -15,6 +15,7 @@ async function request<T>(
   options?: RequestInit,
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
+    cache: 'no-store',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options,
   });
@@ -91,4 +92,8 @@ export async function createCheckoutSession(
 export async function redirectToCheckout(auditId: string): Promise<void> {
   const { url } = await createCheckoutSession(auditId);
   window.location.href = url;
+}
+
+export async function verifyPaymentSession(sessionId: string): Promise<{ paid: boolean }> {
+  return request<{ paid: boolean }>(`/payments/verify-session?sessionId=${sessionId}`);
 }

@@ -3,13 +3,20 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { auditQueue } from '../workers/auditWorker';
+import rateLimit from 'express-rate-limit';
 import type { CreateAuditRequest, CreateAuditResponse } from '../../shared/types';
 
 const router = Router();
 const prisma = new PrismaClient();
 
+const createAuditLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many audits created. Please try again in 15 minutes.' },
+});
+
 // POST /audits — create and enqueue a new audit
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', createAuditLimiter, async (req: Request, res: Response) => {
   const { url, social, type }: CreateAuditRequest = req.body;
 
   if (!type) {
@@ -67,7 +74,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     progress = typeof job?.progress === 'number' ? job.progress : 0;
   }
 
-  res.json({
+  const response = {
     id:           audit.id,
     type:         audit.type,
     status:       audit.status,
@@ -78,11 +85,24 @@ router.get('/:id', async (req: Request, res: Response) => {
     errorMessage: audit.errorMessage ?? null,
     createdAt:    audit.createdAt,
     completedAt:  audit.completedAt ?? null,
-    // Always return free results if complete
     freeResults:  audit.status === 'complete' ? audit.freeResults : null,
-    // Full results only if paid
     fullResults:  audit.paid && full === 'true' ? audit.fullResults : null,
-  });
+  };
+
+  // Auto-repair: If paid but full results are missing, re-enqueue
+  if (audit.paid && !audit.fullResults && audit.status === 'complete') {
+    console.log(`[api] Audit ${id} is paid but missing fullResults. Re-enqueuing for repair...`);
+    await prisma.audit.update({ where: { id }, data: { status: 'queued' } });
+    await auditQueue.add(id, { url: audit.url, type: audit.type }, { jobId: id });
+    response.status = 'queued'; // Tell frontend it's processing again
+  }
+
+  if (response.fullResults) {
+    const fr = response.fullResults as any;
+    console.log(`[api] Audit ${id} full results found. Recos: ${fr.website?.recommendations?.length}, ActionPlan: ${fr.actionPlan?.length}`);
+  }
+
+  res.json(response);
 });
 
 // GET /audits/:id/progress — SSE stream for real-time progress

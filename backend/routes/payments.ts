@@ -66,6 +66,53 @@ router.post('/checkout', async (req: Request, res: Response) => {
   res.json(response);
 });
 
+// ── GET /payments/verify-session ─────────────────────────────────────────────
+// Synchronous check for users returning to the success page.
+// This handles cases where the webhook is delayed or fails to deliver.
+
+router.get('/verify-session', async (req: Request, res: Response) => {
+  const sessionId = req.query.sessionId as string;
+  console.log(`[api] Verifying session: ${sessionId}`);
+
+  if (!sessionId) {
+    return res.status(400).json({ error: 'sessionId is required' });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const auditId = session.metadata?.auditId;
+
+    if (!auditId) {
+      console.warn(`[api] Session ${sessionId} missing auditId metadata`);
+      return res.status(400).json({ error: 'Session missing auditId metadata' });
+    }
+
+    if (session.payment_status === 'paid') {
+      console.log(`[api] Stripe confirms session ${sessionId} is paid. Updating DB...`);
+      
+      const audit = await prisma.audit.update({
+        where: { id: auditId },
+        data: {
+          paid: true,
+          stripeSessionId: session.id,
+        },
+      });
+
+      // Double check the record was actually updated
+      const verify = await prisma.audit.findUnique({ where: { id: auditId } });
+      console.log(`[api] DB Verification — Audit ${auditId} paid status is: ${verify?.paid}`);
+      
+      return res.json({ success: true, paid: verify?.paid ?? false, audit: verify });
+    }
+
+    console.log(`[api] Session ${sessionId} not paid yet (status: ${session.payment_status})`);
+    res.json({ success: true, paid: false });
+  } catch (err: any) {
+    console.error('[api] Verify session failed:', err.message);
+    res.status(500).json({ error: 'Failed to verify payment session' });
+  }
+});
+
 // ── POST /webhooks/stripe ─────────────────────────────────────────────────────
 // Stripe sends events here. We listen for checkout.session.completed.
 // IMPORTANT: This route must receive the RAW request body (not JSON-parsed).
@@ -96,7 +143,7 @@ stripeWebhookRouter.post(
       return res.status(400).json({ error: `Webhook Error: ${message}` });
     }
 
-    console.log(`[webhook] Received event: ${event.type}`);
+    console.log(`[webhook] Received event ${event.id}: ${event.type}`);
 
     // Handle events
     switch (event.type) {

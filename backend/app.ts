@@ -43,7 +43,7 @@ const generalLimiter = rateLimit({
 app.use(generalLimiter);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/audits', auditLimiter, auditRoutes);
+app.use('/audits', auditRoutes);
 app.use('/payments', paymentRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────

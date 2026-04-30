@@ -340,8 +340,8 @@ function generateFindings(
 
   const cwv = lighthouse.coreWebVitals;
 
-  // LCP
-  if (cwv.lcp.score < 75) {
+  // LCP - Be strict: anything under 90 score is a finding
+  if (cwv.lcp.score < 90) {
     findings.push({
       id: id(),
       category: 'Performance — Core Web Vitals',
@@ -354,8 +354,8 @@ function generateFindings(
     });
   }
 
-  // CLS
-  if (cwv.cls.score < 75) {
+  // CLS - Be strict
+  if (cwv.cls.score < 90) {
     findings.push({
       id: id(),
       category: 'Performance — Layout Stability',
@@ -432,8 +432,34 @@ function generateFindings(
     });
   }
 
+  // Accessibility - Be strict
+  if (lighthouse.accessibilityScore < 100) {
+    findings.push({
+      id: id(),
+      category: 'UX / Accessibility',
+      title: `Accessibility score is ${lighthouse.accessibilityScore}/100`,
+      description: 'Your site has accessibility violations that make it harder for disabled users to navigate.',
+      impact: lighthouse.accessibilityScore < 80 ? 'high' : 'medium',
+      businessImpact: 'Accessibility issues → legal compliance risk + poor UX',
+      metricValue: `${lighthouse.accessibilityScore}/100`,
+    });
+  }
+
+  // Best Practices
+  if (lighthouse.bestPracticesScore < 100) {
+    findings.push({
+      id: id(),
+      category: 'Technical Best Practices',
+      title: `Best Practices score is ${lighthouse.bestPracticesScore}/100`,
+      description: 'Your site is missing modern web standards or has security header misconfigurations.',
+      impact: 'medium',
+      businessImpact: 'Poor best practices → security vulnerabilities + lower trust',
+      metricValue: `${lighthouse.bestPracticesScore}/100`,
+    });
+  }
+
   // Lighthouse opportunities — add top issues as findings
-  for (const opp of lighthouse.opportunities.slice(0, 3)) {
+  for (const opp of lighthouse.opportunities.slice(0, 8)) {
     findings.push({
       id: id(),
       category: 'Performance — Optimisation',

@@ -72,20 +72,26 @@ async function processWebsiteAudit(
   const normUrl = normaliseUrl(url);
   const hostname = new URL(normUrl).hostname;
 
+  // Real Data Check: Google cannot audit localhost or private IPs
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.endsWith('.local')) {
+    throw new Error(`Google PageSpeed cannot audit private/local URLs (${hostname}). Please use a publicly accessible URL.`);
+  }
+
   // Run all data-gathering tasks in parallel where possible
   await job.updateProgress(10);
 
   const [
-    lighthouse,
     htmlSignals,
     ssl,
     sitemapRobots,
   ] = await Promise.all([
-    runLighthouseAudit(normUrl, 'mobile'),
     analyseHtmlSignals(normUrl),
     checkSSL(hostname),
     checkSitemapAndRobots(normUrl),
   ]);
+
+  // Run Lighthouse separately
+  const lighthouse = await runLighthouseAudit(normUrl, 'mobile');
 
   await job.updateProgress(60);
   console.log(`[worker] Data gathered — LH performance: ${lighthouse.performanceScore}`);
