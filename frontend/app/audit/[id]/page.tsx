@@ -215,7 +215,12 @@ export default function AuditPage() {
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
               onClick={() => redirectToCheckout(id)}
             >
-              Unlock full report — $49
+              Unlock full report — $
+              {audit.type === "website"
+                ? 30
+                : audit.type === "social"
+                  ? 20
+                  : 50}
             </button>
           )}
           {audit.paid && (
@@ -428,6 +433,13 @@ export default function AuditPage() {
                 paid={audit.paid}
                 lockedCount={9}
                 label="recommendations"
+                price={
+                  audit.type === "website"
+                    ? 30
+                    : audit.type === "social"
+                      ? 20
+                      : 50
+                }
               >
                 <div className="rounded-xl border border-dashed border-gray-200 bg-white p-4 opacity-40 pointer-events-none">
                   <p className="text-sm text-gray-500">
@@ -696,6 +708,9 @@ export default function AuditPage() {
             paid={audit.paid}
             lockedCount={6}
             label="detailed findings"
+            price={
+              audit.type === "website" ? 30 : audit.type === "social" ? 20 : 50
+            }
           >
             <div className="rounded-xl border border-gray-200 bg-white p-4 h-32" />
           </PaywallGate>

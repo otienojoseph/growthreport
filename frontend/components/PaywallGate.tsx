@@ -1,10 +1,10 @@
-'use client';
+"use client";
 // frontend/components/PaywallGate.tsx
 // Wraps premium content with a blur + unlock CTA.
 // Shows content normally if audit.paid === true.
 
-import { useState } from 'react';
-import { redirectToCheckout } from '../lib/api';
+import { useState } from "react";
+import { redirectToCheckout } from "../lib/api";
 
 interface PaywallGateProps {
   auditId: string;
@@ -13,6 +13,7 @@ interface PaywallGateProps {
   /** Number of additional items locked (shown in the CTA) */
   lockedCount?: number;
   label?: string;
+  price?: number;
 }
 
 export default function PaywallGate({
@@ -20,7 +21,8 @@ export default function PaywallGate({
   paid,
   children,
   lockedCount,
-  label = 'findings',
+  label = "findings",
+  price = 49,
 }: PaywallGateProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function PaywallGate({
       setError(null);
       await redirectToCheckout(auditId);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
   }
@@ -44,7 +46,7 @@ export default function PaywallGate({
       <div
         aria-hidden
         className="pointer-events-none select-none"
-        style={{ filter: 'blur(4px)', opacity: 0.5 }}
+        style={{ filter: "blur(4px)", opacity: 0.5 }}
       >
         {children}
       </div>
@@ -63,16 +65,16 @@ export default function PaywallGate({
             the full action plan.
           </p>
 
-          {error && (
-            <p className="text-sm text-red-600 mb-3">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
 
           <button
             onClick={handleUnlock}
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
           >
-            {loading ? 'Redirecting to checkout…' : 'Unlock full report — $49'}
+            {loading
+              ? "Redirecting to checkout…"
+              : `Unlock full report — $${price}`}
           </button>
 
           <p className="mt-2 text-xs text-gray-400">
