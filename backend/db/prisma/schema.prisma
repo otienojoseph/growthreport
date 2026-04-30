@@ -1,0 +1,40 @@
+// backend/db/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  audits    Audit[]
+}
+
+model Audit {
+  id              String    @id @default(uuid())
+  type            String    // "website" | "social" | "full"
+  status          String    @default("queued")
+  url             String?
+  socialHandles   Json?     // { instagram, facebook, linkedin }
+  paid            Boolean   @default(false)
+  stripeSessionId String?
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  freeResults     Json?     // AuditResult (free tier subset)
+  fullResults     Json?     // AuditResult (full)
+  errorMessage    String?
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  jobId           String?   // BullMQ job ID
+
+  @@index([userId])
+  @@index([stripeSessionId])
+  @@index([status])
+}
